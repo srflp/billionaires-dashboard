@@ -1,0 +1,30 @@
+version: "3.8"
+
+volumes:
+  bd_postgres_data:
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "3000:3000"
+    tty: true
+
+  db:
+    image: postgres:alpine
+    restart: always
+    user: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes: 
+      - bd_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      start_period: 1s
+      interval: 1s
+      timeout: 1s
+      retries: 10

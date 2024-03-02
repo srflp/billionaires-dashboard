@@ -1,0 +1,32 @@
+version: "3.8"
+
+name: billionaires-dashboard
+
+volumes:
+  bd_postgres_data:
+
+services:
+  backend:
+    container_name: bd-backend-dev
+    extends:
+      file: docker-compose.base.yml
+      service: backend
+    build:
+      target: dev
+    env_file:
+      - ./backend/.env
+    develop:
+      watch:
+        - action: rebuild
+          path: backend/package.json
+        - action: sync
+          path: backend/src
+          target: /app/src
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    container_name: bd-db-dev
+    extends:
+      file: docker-compose.base.yml
+      service: db

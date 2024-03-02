@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev-watch": "docker compose -f docker-compose.dev.yml watch",
+    "dev": "docker compose -f docker-compose.dev.yml up"
   },
   "keywords": [],
   "author": "",
