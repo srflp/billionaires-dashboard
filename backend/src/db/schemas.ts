@@ -37,7 +37,7 @@ export const billionaires = pgTable("billionaires", {
   birthMonth: integer("birthMonth"),
   birthDay: integer("birthDay"),
   cpiCountry: decimal("cpiCountry", { precision: 5, scale: 2 }),
-  cpiChangeCountry: decimal("cpiChangeCountry", { precision: 2, scale: 1 }),
+  cpiChangeCountry: decimal("cpiChangeCountry", { precision: 3, scale: 1 }),
   gdpCountry: bigint("gdpCountry", { mode: "number" }),
   grossTertiaryEducationEnrollment: decimal(
     "grossTertiaryEducationEnrollment",
@@ -63,6 +63,3 @@ export const billionaires = pgTable("billionaires", {
   latitudeCountry: decimal("latitudeCountry", { precision: 8, scale: 6 }),
   longitudeCountry: decimal("longitudeCountry", { precision: 9, scale: 6 }),
 });
-
-// date column is useless
-// gdp_country is a string - why?

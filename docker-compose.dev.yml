@@ -14,7 +14,7 @@ services:
     build:
       target: dev
     env_file:
-      - ./backend/.env
+      - ./backend/.env.dev
     develop:
       watch:
         - action: rebuild

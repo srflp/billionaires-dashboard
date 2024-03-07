@@ -40,5 +40,6 @@ export const initDb = async () => {
       throw new Error(`Failed to migrate database ${String(error)}`);
     });
 
+  await db.delete(schema.billionaires);
   await seed();
 };
