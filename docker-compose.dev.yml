@@ -25,8 +25,32 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
   db:
     container_name: bd-db-dev
     extends:
       file: docker-compose.base.yml
       service: db
+
+  frontend:
+    container_name: bd-frontend-dev
+    extends:
+      file: docker-compose.base.yml
+      service: frontend
+    build:
+      target: dev
+    develop:
+      watch:
+        - action: rebuild
+          path: frontend/package.json
+        - action: sync+restart
+          path: frontend/vite.config.ts
+          target: /app/vite.config.ts
+        - action: sync
+          path: frontend/src
+          target: /app/src
+        - action: sync
+          path: frontend/index.html
+          target: /app/index.html
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3000/

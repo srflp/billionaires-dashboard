@@ -2,12 +2,18 @@ import { FastifyServerOptions, fastify } from "fastify";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
+import cors from "@fastify/cors";
 
 import { initDb } from "./db/index.js";
-import { HelloRoute } from "./routes/v1/hello.js";
+import { BillionairesRoute } from "./routes/v1/billionaires.js";
 
 export const createApp = (opts: FastifyServerOptions = {}) => {
   const app = fastify(opts).withTypeProvider<TypeBoxTypeProvider>();
+
+  app.register(cors, {
+    origin: true,
+    credentials: true,
+  });
 
   initDb();
 
@@ -31,7 +37,7 @@ export const createApp = (opts: FastifyServerOptions = {}) => {
   });
 
   const commonRouteSettings = { prefix: "api/v1" };
-  app.register(HelloRoute, commonRouteSettings);
+  app.register(BillionairesRoute, commonRouteSettings);
 
   return app;
 };
