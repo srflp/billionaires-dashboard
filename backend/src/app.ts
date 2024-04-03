@@ -6,6 +6,7 @@ import cors from "@fastify/cors";
 
 import { initDb } from "./db/index.js";
 import { BillionairesRoute } from "./routes/v1/billionaires.js";
+import { BillionaireStatsRoute } from "./routes/v1/billionaire-stats.js";
 
 export const createApp = (opts: FastifyServerOptions = {}) => {
   const app = fastify(opts).withTypeProvider<TypeBoxTypeProvider>();
@@ -38,6 +39,7 @@ export const createApp = (opts: FastifyServerOptions = {}) => {
 
   const commonRouteSettings = { prefix: "api/v1" };
   app.register(BillionairesRoute, commonRouteSettings);
+  app.register(BillionaireStatsRoute, commonRouteSettings);
 
   return app;
 };

@@ -5,16 +5,13 @@ import {
   Type,
 } from "@fastify/type-provider-typebox";
 import { billionaires } from "../../db/schemas.js";
-import { asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { asc, count, desc, eq, ilike, or } from "drizzle-orm";
+import { AscDesc } from "../../utils/enums.js";
 
 export const BillionairesRoute: FastifyPluginAsyncTypebox = async (app) => {
   const selectSchema = createSelectSchema(billionaires);
   const insertSchema = createInsertSchema(billionaires);
   const tags = ["billionaires"];
-  enum AscDesc {
-    ASC = "ASC",
-    DESC = "DESC",
-  }
 
   /**
    * Get billionaires
@@ -58,7 +55,7 @@ export const BillionairesRoute: FastifyPluginAsyncTypebox = async (app) => {
             : undefined
         );
       const [{ total }] = await db
-        .select({ total: sql`count(*)`.mapWith(Number) })
+        .select({ total: count() })
         .from(billionaires)
         .where(
           personName
@@ -208,33 +205,6 @@ export const BillionairesRoute: FastifyPluginAsyncTypebox = async (app) => {
         return reply.code(404).send();
       }
       return reply.code(200).send(result);
-    }
-  );
-
-  /**
-   * Get stats
-   */
-  app.get(
-    "/stats",
-    {
-      schema: {
-        tags,
-        response: {
-          200: Type.Array(selectSchema),
-          500: Type.Unknown(),
-        },
-        querystring: Type.Object({
-          personName: Type.Optional(Type.String()),
-        }),
-      },
-    },
-    async (request, reply) => {
-      const { personName } = request.query;
-      const filteredBillionaires = await db
-        .select()
-        .from(billionaires)
-        .where(ilike(billionaires.personName, `%${personName}%`));
-      return reply.code(200).send(filteredBillionaires);
     }
   );
 };
