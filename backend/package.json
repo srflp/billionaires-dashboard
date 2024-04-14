@@ -7,7 +7,7 @@
   "scripts": {
     "preinstall": "npx -y only-allow pnpm",
     "build": "rimraf build && tsc",
-    "start": "node -r dotenv/config .",
+    "start-prod": "node --env-file=.env.vagrant-prod .",
     "dev": "pnpm build && concurrently -k pnpm:watch-tsc pnpm:watch-app -n=ts,app -c=blue,green",
     "watch-tsc": "tsc -w --preserveWatchOutput",
     "watch-app": "nodemon --watch build -r dotenv/config",

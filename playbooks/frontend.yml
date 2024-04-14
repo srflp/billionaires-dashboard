@@ -1,0 +1,89 @@
+- hosts: all
+  vars:
+    nvm_version: 0.39.7
+    repo_url: https://github.com/srflp/billionaires-dashboard.git
+    branch: main
+    sparse_checkout_paths:
+      - frontend
+      - /package.json
+  tasks:
+    - name: Update and upgrade apt packages
+      become: true
+      ansible.builtin.apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # one day
+    - name: Install nginx
+      become: true
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+    - name: Allow 'Nginx HTTP' in ufw
+      become: true
+      community.general.ufw:
+        rule: allow
+        name: "Nginx HTTP"
+    - name: Install nvm
+      ansible.builtin.shell: >
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v{{ nvm_version }}/install.sh | bash
+      args:
+        creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+    - name: Install node
+      ansible.builtin.shell: >
+        bash -ic 'nvm install --lts'
+      args:
+        creates: "{{ ansible_env.HOME }}/.nvm/versions/node"
+    - name: Enable pnpm with corepack
+      ansible.builtin.shell: >
+        bash -ic 'corepack enable pnpm'
+    - name: Create temporary project build directory
+      ansible.builtin.tempfile:
+        state: directory
+      register: temp_dir
+    - name: Prepare sparse git repository
+      ansible.builtin.shell: |
+        git init
+        git config core.sparsecheckout true
+        git remote add origin {{ repo_url }}
+      args:
+        chdir: "{{ temp_dir.path }}"
+        creates: "{{ temp_dir.path }}/.git"
+    - name: Configure sparse-checkout
+      ansible.builtin.copy:
+        dest: "{{ temp_dir.path }}/.git/info/sparse-checkout"
+        content: "{{ sparse_checkout_paths | join('\n') }}"
+    - name: Set build directory path
+      set_fact:
+        build_dir: "{{ temp_dir.path }}/{{ sparse_checkout_paths | first }}"
+    - name: Clone the code
+      ansible.builtin.shell: git pull origin {{ branch }}
+      args:
+        chdir: "{{ temp_dir.path }}"
+        creates: "{{ build_dir }}"
+    - name: Install the package manager using corepack
+      ansible.builtin.shell: bash -ic "corepack install"
+      args:
+        chdir: "{{ build_dir }}"
+    - name: Install the dependencies
+      ansible.builtin.shell: bash -ic "pnpm install"
+      args:
+        chdir: "{{ build_dir }}"
+    - name: Build the app
+      ansible.builtin.shell: bash -ic "pnpm build"
+      args:
+        chdir: "{{ build_dir }}"
+    - name: Remove the default nginx html file
+      become: true
+      ansible.builtin.file:
+        path: /var/www/html/index.nginx-debian.html
+        state: absent
+    - name: Copy a dist folder into /var/www/html where it is served by nginx
+      become: true
+      ansible.builtin.copy:
+        src: "{{ build_dir }}/dist/"
+        dest: /var/www/html
+        remote_src: true
+    - name: Remove the temporary directory
+      ansible.builtin.file:
+        path: "{{ temp_dir.path }}"
+        state: absent
