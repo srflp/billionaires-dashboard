@@ -6,6 +6,7 @@
     sparse_checkout_paths:
       - frontend
       - /package.json
+    backend_url: http://192.168.33.20:3000/
   tasks:
     - name: Update and upgrade apt packages
       become: true
@@ -28,14 +29,12 @@
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v{{ nvm_version }}/install.sh | bash
       args:
         creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+    - name: Install pnpm
+      ansible.builtin.shell: >
+        curl -fsSL https://get.pnpm.io/install.sh | sh -
     - name: Install node
       ansible.builtin.shell: >
-        bash -ic 'nvm install --lts'
-      args:
-        creates: "{{ ansible_env.HOME }}/.nvm/versions/node"
-    - name: Enable pnpm with corepack
-      ansible.builtin.shell: >
-        bash -ic 'corepack enable pnpm'
+        bash -ic 'pnpm env use --global lts'
     - name: Create temporary project build directory
       ansible.builtin.tempfile:
         state: directory
@@ -60,16 +59,12 @@
       args:
         chdir: "{{ temp_dir.path }}"
         creates: "{{ build_dir }}"
-    - name: Install the package manager using corepack
-      ansible.builtin.shell: bash -ic "corepack install"
-      args:
-        chdir: "{{ build_dir }}"
     - name: Install the dependencies
       ansible.builtin.shell: bash -ic "pnpm install"
       args:
         chdir: "{{ build_dir }}"
     - name: Build the app
-      ansible.builtin.shell: bash -ic "pnpm build"
+      ansible.builtin.shell: bash -ic "VITE_BACKEND_URL={{ backend_url }} pnpm build"
       args:
         chdir: "{{ build_dir }}"
     - name: Remove the default nginx html file

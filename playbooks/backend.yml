@@ -6,6 +6,7 @@
     sparse_checkout_paths:
       - backend
       - /package.json
+    app_dir: /home/vagrant/app
   tasks:
     - name: Update and upgrade apt packages
       become: true
@@ -13,47 +14,36 @@
         upgrade: yes
         update_cache: yes
         cache_valid_time: 86400 # one day
-    - name: Install nvm
+    - name: Install pnpm
       ansible.builtin.shell: >
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v{{ nvm_version }}/install.sh | bash
-      args:
-        creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+        curl -fsSL https://get.pnpm.io/install.sh | sh -
     - name: Install node
       ansible.builtin.shell: >
-        bash -ic 'nvm install --lts'
-      args:
-        creates: "{{ ansible_env.HOME }}/.nvm/versions/node"
-    - name: Enable pnpm with corepack
-      ansible.builtin.shell: >
-        bash -ic 'corepack enable pnpm'
-    - name: Create temporary project build directory
-      ansible.builtin.tempfile:
+        bash -ic 'pnpm env use --global lts'
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
         state: directory
-      register: temp_dir
     - name: Prepare sparse git repository
       ansible.builtin.shell: |
         git init
         git config core.sparsecheckout true
         git remote add origin {{ repo_url }}
       args:
-        chdir: "{{ temp_dir.path }}"
-        creates: "{{ temp_dir.path }}/.git"
+        chdir: "{{ app_dir }}"
+        creates: "{{ app_dir }}/.git"
     - name: Configure sparse-checkout
       ansible.builtin.copy:
-        dest: "{{ temp_dir.path }}/.git/info/sparse-checkout"
+        dest: "{{ app_dir }}/.git/info/sparse-checkout"
         content: "{{ sparse_checkout_paths | join('\n') }}"
     - name: Set build directory path
       set_fact:
-        build_dir: "{{ temp_dir.path }}/{{ sparse_checkout_paths | first }}"
+        build_dir: "{{ app_dir }}/{{ sparse_checkout_paths | first }}"
     - name: Clone the code
       ansible.builtin.shell: git pull origin {{ branch }}
       args:
-        chdir: "{{ temp_dir.path }}"
+        chdir: "{{ app_dir }}"
         creates: "{{ build_dir }}"
-    - name: Install the package manager using corepack
-      ansible.builtin.shell: bash -ic "corepack install"
-      args:
-        chdir: "{{ build_dir }}"
     - name: Install the dependencies
       ansible.builtin.shell: bash -ic "pnpm install"
       args:
@@ -62,31 +52,12 @@
       ansible.builtin.shell: bash -ic "pnpm build"
       args:
         chdir: "{{ build_dir }}"
-    - name: Copy a build folder into /home/vagrant/app
-      ansible.builtin.copy:
-        src: "{{ build_dir }}/build/"
-        dest: /home/vagrant/app
-        remote_src: true
-    - name: Copy an env file into /home/vagrant/app/
-      ansible.builtin.copy:
-        src: "{{ build_dir }}/.env.vagrant-prod"
-        dest: /home/vagrant/app/.env
-        remote_src: true
-    - name: Copy data into /home/vagrant/app/
-      ansible.builtin.copy:
-        src: "{{ build_dir }}/data/"
-        dest: /home/vagrant/app/data
-        remote_src: true
     - name: Install pm2
-      community.general.npm:
-        name: pm2
-        global: true
+      ansible.builtin.shell: bash -ic "pnpm add -g pm2"
+    - name: Remove all pm2 apps
+      ansible.builtin.shell: bash -ic "pm2 delete all ||:"
     - name: Start the app using pm2
       ansible.builtin.shell: >
-        pm2 start "node --env-file=.env server.js"
+        bash -ic "pm2 start 'pnpm start-prod' --name app"
       args:
-        chdir: "/home/vagrant/app/"
-    - name: Remove the temporary directory
-      ansible.builtin.file:
-        path: "{{ temp_dir.path }}"
-        state: absent
+        chdir: "{{ build_dir }}"
