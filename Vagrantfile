@@ -1,6 +1,11 @@
 Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-22.04-arm64"
 
+  config.vm.provider :vmware_desktop do |vmware|
+    vmware.vmx["ethernet0.pcislotnumber"] = "160"
+    vmware.vmx["ethernet1.pcislotnumber"] = "224"
+  end
+
   config.vm.define "db" do |db|
     db.vm.hostname = "db"
     db.vm.provision :ansible do |ansible|
