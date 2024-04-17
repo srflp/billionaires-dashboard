@@ -10,6 +10,8 @@ Run:
 pnpm dev
 ```
 
+Website should be available at http://localhost:3001/
+
 To enable HMR, run also this script in a new terminal:
 
 ```bash
@@ -24,6 +26,14 @@ To start:
 
 ```bash
 vagrant up
+```
+
+Website should be available at http://localhost:8080/
+
+To suspend:
+
+```bash
+vagrant suspend
 ```
 
 To stop:
@@ -45,6 +55,8 @@ To start the cluster:
 ```bash
 kubectl apply -f k8s/
 ```
+
+Website should be available at http://localhost:3001/
 
 To delete the cluster:
 

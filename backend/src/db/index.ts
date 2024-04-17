@@ -5,6 +5,7 @@ import pg from "pg";
 import { Logger } from "../utils/logger.js";
 import { config } from "../config.js";
 import { seed } from "./seed.js";
+import { count } from "drizzle-orm";
 
 // eslint-disable-next-line import/no-mutable-exports
 export let db: ReturnType<typeof drizzle<typeof schema>>;
@@ -43,6 +44,11 @@ export const initDb = async () => {
       throw new Error(`Failed to migrate database ${String(error)}`);
     });
 
-  await db.delete(schema.billionaires);
+  const [{ count: itemCount }] = await db
+    .select({ count: count() })
+    .from(schema.billionaires);
+
+  if (!!itemCount) return;
+
   await seed();
 };
