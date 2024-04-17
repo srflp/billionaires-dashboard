@@ -1,4 +1,4 @@
-import { config } from "./src/config";
+import { config } from "./src/config.js";
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
@@ -6,7 +6,11 @@ export default defineConfig({
   out: "./src/db/migrations",
   driver: "pg",
   dbCredentials: {
-    connectionString: config.DATABASE_URL,
+    host: config.POSTGRES_HOST,
+    port: config.POSTGRES_PORT,
+    database: config.POSTGRES_DB,
+    user: config.POSTGRES_USER,
+    password: config.POSTGRES_PASSWORD,
   },
   verbose: true,
   strict: true,

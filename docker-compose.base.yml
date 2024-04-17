@@ -1,5 +1,3 @@
-version: "3.8"
-
 volumes:
   bd_postgres_data:
 

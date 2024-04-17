@@ -5,14 +5,17 @@ import pg from "pg";
 import { Logger } from "../utils/logger.js";
 import { config } from "../config.js";
 import { seed } from "./seed.js";
-const { Pool } = pg;
 
 // eslint-disable-next-line import/no-mutable-exports
 export let db: ReturnType<typeof drizzle<typeof schema>>;
 
 export const initDb = async () => {
-  const pool = await new Pool({
-    connectionString: config.DATABASE_URL,
+  const pool = await new pg.Pool({
+    host: config.POSTGRES_HOST,
+    port: config.POSTGRES_PORT,
+    database: config.POSTGRES_DB,
+    user: config.POSTGRES_USER,
+    password: config.POSTGRES_PASSWORD,
   })
     .connect()
     .then((client) => {
