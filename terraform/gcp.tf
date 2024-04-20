@@ -35,10 +35,7 @@ resource "google_compute_instance" "db" {
     }
   }
 
-  service_account {
-    scopes = ["cloud-platform"]
-  }
-
+  allow_stopping_for_update = true
 
   provisioner "remote-exec" {
     inline = ["echo 'Wait until SSH is ready'"]
@@ -76,10 +73,7 @@ resource "google_compute_instance" "backend" {
     }
   }
 
-  service_account {
-    scopes = ["cloud-platform"]
-  }
-
+  allow_stopping_for_update = true
 
   provisioner "remote-exec" {
     inline = ["echo 'Wait until SSH is ready'"]
@@ -117,10 +111,7 @@ resource "google_compute_instance" "frontend" {
     }
   }
 
-  service_account {
-    scopes = ["cloud-platform"]
-  }
-
+  allow_stopping_for_update = true
 
   provisioner "remote-exec" {
     inline = ["echo 'Wait until SSH is ready'"]
