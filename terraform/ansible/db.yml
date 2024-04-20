@@ -1,0 +1,40 @@
+- hosts: all
+  vars:
+    postgresql_hba_entries:
+      - { type: local, database: all, user: postgres, auth_method: peer }
+      - { type: local, database: all, user: all, auth_method: peer }
+      - {
+          type: "host",
+          database: "all",
+          user: "all",
+          address: "0.0.0.0/0",
+          auth_method: "md5",
+        }
+    postgresql_global_config_options:
+      - option: listen_addresses
+        value: "*"
+      - option: unix_socket_directories
+        value: '{{ postgresql_unix_socket_directories | join(",") }}'
+      - option: log_directory
+        value: "log"
+    postgresql_users:
+      - name: postgres
+        password: postgres
+    postgres_users_no_log: false
+  pre_tasks:
+    - name: Update and upgrade apt packages
+      become: true
+      ansible.builtin.apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # one day
+  roles:
+    - role: geerlingguy.postgresql
+      become: yes
+  tasks:
+    - name: Allow PostgreSQL from backend only
+      become: yes
+      community.general.ufw:
+        rule: allow
+        port: "5432"
+        proto: tcp

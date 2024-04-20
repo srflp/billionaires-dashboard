@@ -66,4 +66,20 @@ kubectl delete -f k8s/
 
 ## Terraform
 
-todo
+Enter terraform directory:
+
+```bash
+cd terraform
+```
+
+To deploy do GCP, run:
+
+```bash
+terraform apply
+```
+
+To destroy all resources, run:
+
+```bash
+terraform destroy
+```

@@ -1,0 +1,63 @@
+- hosts: all
+  vars:
+    nvm_version: 0.39.7
+    repo_url: https://github.com/srflp/billionaires-dashboard.git
+    branch: main
+    sparse_checkout_paths:
+      - backend
+      - /package.json
+    app_dir: /home/ansible/app
+  tasks:
+    - name: Update and upgrade apt packages
+      become: true
+      ansible.builtin.apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400 # one day
+    - name: Install pnpm
+      ansible.builtin.shell: >
+        curl -fsSL https://get.pnpm.io/install.sh | sh -
+    - name: Install node
+      ansible.builtin.shell: >
+        bash -ic 'pnpm env use --global lts'
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+    - name: Prepare sparse git repository
+      ansible.builtin.shell: |
+        git init
+        git config core.sparsecheckout true
+        git remote add origin {{ repo_url }}
+      args:
+        chdir: "{{ app_dir }}"
+        creates: "{{ app_dir }}/.git"
+    - name: Configure sparse-checkout
+      ansible.builtin.copy:
+        dest: "{{ app_dir }}/.git/info/sparse-checkout"
+        content: "{{ sparse_checkout_paths | join('\n') }}"
+    - name: Set build directory path
+      set_fact:
+        build_dir: "{{ app_dir }}/{{ sparse_checkout_paths | first }}"
+    - name: Clone the code
+      ansible.builtin.shell: git pull origin {{ branch }}
+      args:
+        chdir: "{{ app_dir }}"
+        creates: "{{ build_dir }}"
+    - name: Install the dependencies
+      ansible.builtin.shell: bash -ic "pnpm install"
+      args:
+        chdir: "{{ build_dir }}"
+    - name: Build the app
+      ansible.builtin.shell: bash -ic "pnpm build"
+      args:
+        chdir: "{{ build_dir }}"
+    - name: Install pm2
+      ansible.builtin.shell: bash -ic "pnpm add -g pm2"
+    - name: Remove all pm2 apps
+      ansible.builtin.shell: bash -ic "pm2 delete all ||:"
+    - name: Start the app using pm2
+      ansible.builtin.shell: >
+        bash -ic "pm2 start 'ENV=production POSTGRES_HOST={{ postgres_ip }} POSTGRES_PORT=5432 POSTGRES_DB=postgres POSTGRES_USER=postgres POSTGRES_PASSWORD=postgres node .' --name app"
+      args:
+        chdir: "{{ build_dir }}"
