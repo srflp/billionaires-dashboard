@@ -139,8 +139,8 @@ resource "google_compute_firewall" "backend-to-db" {
     ports    = ["5432"]
   }
 
-  source_tags = ["backend"]
-  target_tags = ["db"]
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["db"]
 }
 
 resource "google_compute_firewall" "web-to-backend" {
